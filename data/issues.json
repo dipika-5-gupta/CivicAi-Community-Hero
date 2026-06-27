@@ -1,0 +1,23 @@
+[
+  {
+    "id": "d39f4335",
+    "society_code": "SOC-043E",
+    "reported_by": "RAM",
+    "flat": "100",
+    "phone": "1234567890",
+    "description": "leakage in tap",
+    "location": "park",
+    "photo": null,
+    "video": null,
+    "timestamp": "26 Jun 2026, 03:16 PM",
+    "category": "Water Leakage",
+    "severity": "Medium",
+    "priority_score": 7,
+    "suggested_action": "Send a plumber to repair or replace the leaking tap in the park immediately to prevent water wastage.",
+    "estimated_resolution": "1-2 days",
+    "upvotes": 0,
+    "status": "Open",
+    "resolved_on": null,
+    "resolved_by": null
+  }
+]

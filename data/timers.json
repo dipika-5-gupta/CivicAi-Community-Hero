@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Park Cleaning",
+    "interval_days": 7,
+    "last_done": null
+  },
+  {
+    "name": "Terrace Cleaning",
+    "interval_days": 14,
+    "last_done": null
+  },
+  {
+    "name": "Water Tanker",
+    "interval_days": 3,
+    "last_done": null
+  }
+]
