@@ -3,6 +3,7 @@ import json
 import uuid
 import os
 from datetime import datetime
+from google import genai as google_genai
 
 # ─── Page Config ───────────────────────────────────────────
 st.set_page_config(
@@ -147,10 +148,9 @@ def generate_society_code():
 def now():
     return datetime.now().strftime("%d %b %Y, %I:%M %p")
 
-def get_api_key():
-    with open("gemini_helper.py", "r") as f:
-        content = f.read()
-    return content.split('API_KEY = "')[1].split('"')[0]
+def get_client():
+    from gemini_helper import client
+    return client
 
 # ─── Session State ─────────────────────────────────────────
 if "logged_in" not in st.session_state:
@@ -302,18 +302,18 @@ def main_app():
         st.session_state.current_user = None
         st.rerun()
 
-    if page == "🏠 Home":                   show_home(user)
-    elif page == "🚨 Report Issue":          show_report(user)
-    elif page == "📋 Issue Tracker":         show_tracker(user, role)
-    elif page == "📢 Notice Board":          show_notices(user, role)
-    elif page == "👥 Society Directory":     show_directory(user, role)
-    elif page == "🤝 Contributions":         show_contributions(user)
-    elif page == "⏰ Maintenance Timers":    show_timers(user, role)
-    elif page == "🔍 Lost & Found":          show_lost_found(user)
-    elif page == "🎮 Brain Games":           show_games(user)
-    elif page == "🤖 AI Insights":           show_insights()
-    elif page == "💬 AI Chat Assistant":     show_ai_chat(user)
-    elif page == "⚙️ Secretary Panel":       show_secretary_panel(user)
+    if page == "🏠 Home":                show_home(user)
+    elif page == "🚨 Report Issue":       show_report(user)
+    elif page == "📋 Issue Tracker":      show_tracker(user, role)
+    elif page == "📢 Notice Board":       show_notices(user, role)
+    elif page == "👥 Society Directory":  show_directory(user, role)
+    elif page == "🤝 Contributions":      show_contributions(user)
+    elif page == "⏰ Maintenance Timers": show_timers(user, role)
+    elif page == "🔍 Lost & Found":       show_lost_found(user)
+    elif page == "🎮 Brain Games":        show_games(user)
+    elif page == "🤖 AI Insights":        show_insights()
+    elif page == "💬 AI Chat Assistant":  show_ai_chat(user)
+    elif page == "⚙️ Secretary Panel":    show_secretary_panel(user)
 
 # ══════════════════════════════════════════════════════════════
 #  PAGE: HOME
@@ -527,12 +527,10 @@ def show_tracker(user, role):
                             if st.button("📄 Generate Complaint Letter", key=f"letter_{issue['id']}"):
                                 with st.spinner("Gemini is drafting a formal complaint letter..."):
                                     try:
-                                        from google import genai as google_genai
-                                        client = google_genai.Client(api_key=get_api_key())
+                                        client = get_client()
                                         prompt = f"""
                                         You are a professional society secretary.
-                                        Write a formal complaint letter to the Municipal Corporation about this issue:
-
+                                        Write a formal complaint letter to the Municipal Corporation:
                                         Society Name: {user['society_name']}
                                         Society Location: {user['society_location']}
                                         Secretary Name: {user['name']}
@@ -542,17 +540,12 @@ def show_tracker(user, role):
                                         Reported On: {issue['timestamp']}
                                         Severity: {issue['severity']}
                                         Suggested Action: {issue['suggested_action']}
-
-                                        Write a professional formal letter with:
-                                        - Proper salutation
-                                        - Clear description of the problem
-                                        - Impact on residents
-                                        - Requested action with timeline
-                                        - Professional closing
-                                        Keep it under 300 words.
+                                        Write a professional formal letter with proper salutation,
+                                        clear description, impact on residents, requested action
+                                        with timeline, and professional closing. Under 300 words.
                                         """
                                         response = client.models.generate_content(
-                                            model="gemini-2.0-flash-lite",
+                                            model="gemini-2.5-flash-lite",
                                             contents=prompt
                                         )
                                         letter = response.text
@@ -664,11 +657,11 @@ def show_directory(user, role):
 
         with st.expander("Add new staff member"):
             with st.form("staff_form"):
-                sname = st.text_input("Name")
-                srole = st.selectbox("Role", ["Watchman", "Milkman", "Newspaper Delivery", "Plumber", "Electrician", "Other"])
+                sname  = st.text_input("Name")
+                srole  = st.selectbox("Role", ["Watchman", "Milkman", "Newspaper Delivery", "Plumber", "Electrician", "Other"])
                 sphone = st.text_input("Phone")
-                stime = st.text_input("Shift / Timing", placeholder="e.g. 6 AM - 2 PM")
-                sadd = st.form_submit_button("Add Staff")
+                stime  = st.text_input("Shift / Timing", placeholder="e.g. 6 AM - 2 PM")
+                sadd   = st.form_submit_button("Add Staff")
             if sadd:
                 staff.append({
                     "society_code": user["society_code"],
@@ -1016,8 +1009,6 @@ def show_insights():
 #  PAGE: AI CHAT ASSISTANT
 # ══════════════════════════════════════════════════════════════
 def show_ai_chat(user):
-    from google import genai as google_genai
-
     st.header("💬 AI Chat Assistant")
     st.info("Ask CivicAI anything about your society — issues, notices, maintenance, and more.")
 
@@ -1041,35 +1032,21 @@ def show_ai_chat(user):
 
     society_context = f"""
     You are CivicAI, a smart assistant for {user['society_name']} located at {user['society_location']}.
-    You help society members and the secretary with information about their community.
-
     Current Society Data:
     - Total Members: {len(soc_members)}
-    - Total Issues Reported: {len(soc_issues)}
+    - Total Issues: {len(soc_issues)}
     - Open Issues: {len(open_issues)}
     - Resolved Issues: {len(resolved)}
     - High Severity Issues: {len(high_severity)}
     - Total Notices: {len(soc_notices)}
-
-    Open Issues Summary:
-    {json.dumps(open_issues[:10], indent=2)}
-
-    Recent Notices:
-    {json.dumps(soc_notices[-5:], indent=2)}
-
-    Maintenance Timers:
-    {json.dumps(timers, indent=2)}
-
-    Recent Contributions:
-    {json.dumps(soc_contrib[-5:], indent=2)}
-
+    Open Issues: {json.dumps(open_issues[:10], indent=2)}
+    Recent Notices: {json.dumps(soc_notices[-5:], indent=2)}
+    Timers: {json.dumps(timers, indent=2)}
     Instructions:
-    - Answer only questions related to this society and its data
+    - Answer only society related questions
     - Be helpful, friendly and concise
-    - If asked about urgent issues, refer to high severity open issues
-    - If asked about members, give count but not personal phone numbers
-    - Respond in the same language the user writes in (Hindi or English)
-    - If you dont have data to answer something, say so honestly
+    - Respond in same language as user (Hindi or English)
+    - Don't share personal phone numbers
     """
 
     for msg in st.session_state.chat_history:
@@ -1097,13 +1074,12 @@ def show_ai_chat(user):
                 st.session_state.chat_history.append({"role": "user", "content": suggestion})
                 with st.spinner("CivicAI is thinking..."):
                     try:
-                        client = google_genai.Client(api_key=get_api_key())
+                        client = get_client()
                         response = client.models.generate_content(
-                            model="gemini-2.0-flash-lite",
+                            model="gemini-2.5-flash-lite",
                             contents=society_context + "\n\nUser: " + suggestion + "\nCivicAI:"
                         )
-                        reply = response.text
-                        st.session_state.chat_history.append({"role": "assistant", "content": reply})
+                        st.session_state.chat_history.append({"role": "assistant", "content": response.text})
                     except Exception as e:
                         st.session_state.chat_history.append({"role": "assistant", "content": f"Sorry, error: {e}"})
                 st.rerun()
@@ -1113,14 +1089,14 @@ def show_ai_chat(user):
         st.session_state.chat_history.append({"role": "user", "content": user_input})
         with st.spinner("CivicAI is thinking..."):
             try:
-                client = google_genai.Client(api_key=get_api_key())
+                client = get_client()
                 full_conversation = society_context + "\n\n"
                 for msg in st.session_state.chat_history:
                     role_label = "User" if msg["role"] == "user" else "CivicAI"
                     full_conversation += f"{role_label}: {msg['content']}\n"
                 full_conversation += "CivicAI:"
                 response = client.models.generate_content(
-                    model="gemini-2.0-flash-lite",
+                    model="gemini-2.5-flash-lite",
                     contents=full_conversation
                 )
                 st.session_state.chat_history.append({"role": "assistant", "content": response.text})
