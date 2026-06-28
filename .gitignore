@@ -1,6 +1,6 @@
 data/users.json
 uploads/
-gemini_helper.py
+
 __pycache__/
 *.pyc
 .streamlit/secrets.toml
