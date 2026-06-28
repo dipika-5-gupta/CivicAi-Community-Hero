@@ -135,6 +135,15 @@ LOST_FOUND_FILE    = "data/lost_found.json"
 
 # ─── Helpers ───────────────────────────────────────────────
 def load(path):
+    if not os.path.exists(path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        default = [] if "timers" not in path else [
+            {"name": "Park Cleaning", "interval_days": 7, "last_done": None},
+            {"name": "Terrace Cleaning", "interval_days": 14, "last_done": None},
+            {"name": "Water Tanker", "interval_days": 3, "last_done": None}
+        ]
+        with open(path, "w") as f:
+            json.dump(default, f)
     with open(path, "r") as f:
         return json.load(f)
 
@@ -1153,6 +1162,10 @@ def show_secretary_panel(user):
 # ══════════════════════════════════════════════════════════════
 #  ENTRY POINT
 # ══════════════════════════════════════════════════════════════
+# Auto setup data files
+import setup
+setup
+
 if not st.session_state.logged_in:
     auth_screen()
 else:
